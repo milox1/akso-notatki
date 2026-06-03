@@ -15,6 +15,8 @@ Każdy temat robimy w schemacie:
 
 Nie przepisujemy slajdów. Wyciągamy rzeczy, które można zamienić na pytanie egzaminacyjne.
 
+Do nauki kolejnościowo używaj też drzewa: [00_DRZEWO_NAUKI_AKSO.md](/Users/miloszkubis/Documents/AKSO-NOTATKI/00_DRZEWO_NAUKI_AKSO.md).
+
 ## Jak używać 13 nagrań
 
 Nagrania nie są główną nauką. Są ratunkiem, gdy temat nie wchodzi.
