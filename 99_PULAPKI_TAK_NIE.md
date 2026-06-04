@@ -66,6 +66,22 @@ Ten plik jest do dopisywania rzeczy, na których łatwo stracić punkt. Każda p
 **Odpowiedź:** N.  
 **Dlaczego:** kod jądra obsługujący syscall wykonuje się w trybie uprzywilejowanym.
 
+**Pułapka:** Przełączenie kontekstu polega na zmianie trybu użytkownika na tryb jądra.  
+**Odpowiedź:** N.  
+**Dlaczego:** zmiana trybu user/kernel to nie to samo co przełączenie kontekstu procesu A na proces B.
+
+**Pułapka:** W kolejkach procesów system trzyma pełną pamięć procesów.  
+**Odpowiedź:** N.  
+**Dlaczego:** w kolejkach są PCB albo wskaźniki do PCB, nie kopie całej przestrzeni adresowej.
+
+**Pułapka:** `exec` tworzy nowy proces potomny.  
+**Odpowiedź:** N.  
+**Dlaczego:** `exec` podmienia program w bieżącym procesie; nowy proces tworzy `fork`.
+
+**Pułapka:** Przerwania sprzętowe są synchroniczne względem wykonywanej instrukcji.  
+**Odpowiedź:** N.  
+**Dlaczego:** przerwania sprzętowe są asynchroniczne; synchroniczne są np. wyjątki i pułapki programowe.
+
 ## Szeregowanie
 
 **Pułapka:** SJF jest wywłaszczający, a SRTF niewywłaszczający.  
@@ -116,6 +132,10 @@ Ten plik jest do dopisywania rzeczy, na których łatwo stracić punkt. Każda p
 **Odpowiedź:** N.  
 **Dlaczego:** przesuwanie procesów wymaga możliwości relokacji, najlepiej wiązania podczas wykonania.
 
+**Pułapka:** Program użytkownika może sam zmienić rejestr bazowy i graniczny.  
+**Odpowiedź:** N.  
+**Dlaczego:** rejestry ochrony pamięci ustawia system w trybie uprzywilejowanym, np. przy przełączeniu kontekstu.
+
 ## Stronicowanie i TLB
 
 **Pułapka:** Offset zmienia się podczas translacji adresu w stronicowaniu.  
@@ -161,3 +181,7 @@ Ten plik jest do dopisywania rzeczy, na których łatwo stracić punkt. Każda p
 **Pułapka:** Koniec transmisji DMA jest zwykle sygnalizowany przerwaniem.  
 **Odpowiedź:** T.  
 **Dlaczego:** CPU ustawia transfer, a po zakończeniu dostaje informację, często przez przerwanie.
+
+**Pułapka:** Operacje wejścia-wyjścia są porównywalnie szybkie z dostępem do pamięci RAM.  
+**Odpowiedź:** N.  
+**Dlaczego:** I/O jest zwykle o rzędy wielkości wolniejsze, więc proces czekający na I/O jest często wstrzymywany.

@@ -54,6 +54,45 @@ Zarządca pamięci:
 - wspiera ochronę,
 - może współpracować z pamięcią pomocniczą.
 
+## Prosta ochrona pamięci: rejestr bazowy i graniczny
+
+Jednym z prostych sposobów ochrony pamięci procesu są dwa rejestry:
+
+| Rejestr | Sens |
+|---|---|
+| bazowy | początek dozwolonego obszaru pamięci procesu |
+| graniczny | rozmiar dozwolonego obszaru albo informacja o jego końcu, zależnie od konwencji |
+
+W wariancie ze slajdu sprzęt sprawdza każdy adres:
+
+```text
+adres >= baza
+adres <= baza + granica
+```
+
+Jeśli oba warunki są spełnione, dostęp do pamięci jest dozwolony.
+
+Jeśli któryś warunek nie jest spełniony, sprzęt zgłasza przerwanie/wyjątek: **błąd adresowania**.
+
+Przykład:
+
+```text
+baza = 1000
+granica = 500
+dozwolony zakres: 1000 ... 1500
+```
+
+Adres `1200` jest poprawny, ale `999` i `1600` powodują błąd.
+
+Wartości rejestru bazowego i granicznego ustawia system operacyjny, np. przy przełączeniu kontekstu. Zmiana tych rejestrów jest operacją uprzywilejowaną, więc zwykły program użytkownika nie może sam zwiększyć sobie dozwolonego zakresu pamięci.
+
+Egzaminowo:
+
+- rejestr bazowy i graniczny mogą służyć do ochrony pamięci procesu: **T**,
+- proces użytkownika może dowolnie zmieniać te rejestry: **N**,
+- system może ustawiać te rejestry przy przełączaniu kontekstu: **T**,
+- adres spoza zakresu powoduje błąd adresowania: **T**.
+
 ## Brak zarządzania i pojedynczy obszar
 
 Najprostsze modele:
@@ -130,6 +169,7 @@ Jeśli adresy zostały związane podczas ładowania i program nie może być prz
 - Best fit nie oznacza automatycznie najmniejszej fragmentacji globalnej.
 - Relokacja podczas wykonania wymaga wsparcia sprzętowego.
 - Swapping całych procesów jest kosztowny.
+- Rejestr bazowy i graniczny to prosty mechanizm ochrony zakresu adresów procesu.
 
 ## Pytania T/N z odpowiedziami
 
@@ -163,3 +203,11 @@ Jeśli adresy zostały związane podczas ładowania i program nie może być prz
 10. Adres fizyczny to rzeczywisty adres w pamięci operacyjnej.  
     **T** - po translacji.
 
+11. Rejestr bazowy może określać początek dozwolonego obszaru pamięci procesu.  
+    **T** - sprzęt porównuje adres z bazą.
+
+12. Program użytkownika może samodzielnie zmienić rejestr bazowy i graniczny.  
+    **N** - to operacja uprzywilejowana.
+
+13. Adres spoza zakresu wyznaczonego przez bazę i granicę może spowodować błąd adresowania.  
+    **T** - sprzęt odrzuca nielegalny dostęp.

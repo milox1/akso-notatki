@@ -128,6 +128,36 @@ Pułapka:
 
 > PCB nie przechowuje całej zawartości stron pamięci procesu. Przechowuje metadane i wskaźniki/struktury potrzebne do zarządzania.
 
+## Kolejki procesów
+
+System operacyjny przechowuje procesy w kolejkach przez ich **PCB** albo wskaźniki do PCB. Nie przenosi w kolejce całej pamięci procesu.
+
+Najważniejsze kolejki:
+
+| Kolejka | Co zawiera |
+|---|---|
+| kolejka gotowych | PCB procesów gotowych do dostania CPU |
+| kolejka wstrzymanych na zasobie | PCB procesów czekających na konkretny zasób albo zdarzenie |
+
+Przykład dla dysku:
+
+```text
+proces aktywny
+-> zleca operację dyskową
+-> przechodzi do stanu wstrzymanego
+-> jego PCB trafia do kolejki procesów czekających na dysk
+-> dysk kończy operację i zgłasza przerwanie
+-> PCB procesu wraca do kolejki gotowych
+```
+
+Po zakończeniu I/O proces zwykle nie staje się od razu aktywny. Najpierw trafia do kolejki gotowych i dopiero planista może przydzielić mu CPU.
+
+Pułapki:
+
+- proces gotowy czeka na CPU,
+- proces wstrzymany czeka na zdarzenie, np. dysk, semafor, dane z sieci,
+- w kolejkach są PCB/wskaźniki do PCB, a nie pełne kopie procesów.
+
 ## Stany procesu
 
 Najważniejsze stany:
@@ -174,6 +204,69 @@ System musi:
 
 Przełączenie kontekstu może być kosztowne, bo samo w sobie nie wykonuje pracy użytkownika.
 
+## Przełączenie kontekstu a zmiana trybu
+
+Tego nie wolno mylić:
+
+| Pojęcie | Co się zmienia |
+|---|---|
+| zmiana trybu | tryb użytkownika <-> tryb jądra/uprzywilejowany |
+| przełączenie kontekstu | wykonywany proces/wątek, np. proces A -> proces B |
+
+Zmiana trybu może nastąpić np. przy:
+
+- wywołaniu systemowym,
+- przerwaniu,
+- wyjątku.
+
+Przełączenie kontekstu oznacza zapisanie stanu jednego procesu i odtworzenie stanu innego procesu.
+
+Te rzeczy mogą wystąpić razem, ale nie są tym samym.
+
+Przykład:
+
+```text
+proces A w user mode
+-> przerwanie zegarowe
+-> wejście do jądra, czyli zmiana trybu
+-> jądro zapisuje kontekst A
+-> jądro wybiera proces B
+-> jądro odtwarza kontekst B
+-> powrót do user mode procesu B
+```
+
+Pułapka egzaminacyjna:
+
+> Przełączanie kontekstu polega na przełączeniu kontekstu wykonania między trybem uprzywilejowanym a trybem użytkownika.
+
+Odpowiedź: **N**.
+
+To jest opis zmiany trybu, a nie przełączenia kontekstu między procesami.
+
+## Realizacja przełączenia kontekstu
+
+Przełączenie kontekstu może być realizowane:
+
+- sprzętowo,
+- na poziomie systemu operacyjnego.
+
+Sprzętowo, np. w architekturze x86, istnieją mechanizmy zadań procesora, takie jak:
+
+- Task State Segment,
+- deskryptor TSS,
+- task gate,
+- task register.
+
+W takim modelu sprzęt może automatycznie zapisać część stanu starego zadania i załadować stan nowego.
+
+W praktyce przełączanie kontekstu najczęściej realizuje system operacyjny, bo daje to większą elastyczność i przenośność.
+
+Egzaminowo:
+
+- przełączanie kontekstu może być realizowane sprzętowo: **T**,
+- przełączanie kontekstu może być realizowane przez system operacyjny: **T**,
+- przełączanie kontekstu polega na zmianie trybu user/kernel: **N**.
+
 ## Tryb użytkownika i tryb uprzywilejowany
 
 System operacyjny potrzebuje ochrony, więc procesor ma co najmniej dwa tryby:
@@ -182,6 +275,43 @@ System operacyjny potrzebuje ochrony, więc procesor ma co najmniej dwa tryby:
 - **tryb uprzywilejowany/jądra** - system operacyjny.
 
 Instrukcje niebezpieczne, np. bezpośredni dostęp do urządzeń albo zmiana konfiguracji pamięci, są wykonywane w trybie uprzywilejowanym.
+
+W x86 poziomy ochrony nazywa się ringami:
+
+| Ring | Znaczenie | Typowe użycie |
+|---|---|---|
+| 0 | najbardziej uprzywilejowany | jądro systemu |
+| 1 | pośredni | rzadko używany |
+| 2 | pośredni | rzadko używany |
+| 3 | najmniej uprzywilejowany | programy użytkownika |
+
+W praktyce typowe systemy używają głównie:
+
+```text
+ring 0 = kernel mode
+ring 3 = user mode
+```
+
+Sprzętowe wymagania ochrony:
+
+- procesor musi mieć co najmniej tryb użytkownika i tryb uprzywilejowany,
+- system operacyjny startuje i działa w trybie uprzywilejowanym,
+- procesy użytkownika są uruchamiane w trybie użytkownika,
+- przerwania, wyjątki i wywołania systemowe są obsługiwane przez system w trybie uprzywilejowanym,
+- przed powrotem do programu użytkownika system przełącza tryb pracy na tryb użytkownika,
+- niektóre rozkazy są uprzywilejowane.
+
+Przykłady rozkazów/operacji uprzywilejowanych:
+
+- zmiana tablic stron albo rejestrów ochrony pamięci,
+- dostęp do urządzeń bezpośrednio przez porty,
+- wyłączanie przerwań,
+- zmiana trybu pracy,
+- operacje na rejestrach systemowych.
+
+Pułapka:
+
+> Program użytkownika nie decyduje sam, że od teraz działa w trybie jądra. Wejście do jądra odbywa się kontrolowanym mechanizmem, np. przez syscall, przerwanie albo wyjątek.
 
 ## Wywołania systemowe
 
@@ -198,6 +328,61 @@ Przykłady:
 
 Funkcja systemowa wykonuje się w trybie jądra, nawet jeśli została wywołana przez proces użytkownika.
 
+Mechanizm wygląda w skrócie tak:
+
+```text
+proces użytkownika
+-> przygotowuje numer wywołania systemowego i argumenty
+-> wykonuje instrukcję syscall/trap
+-> CPU przechodzi do trybu uprzywilejowanego
+-> jądro wybiera odpowiednią funkcję systemową po numerze
+-> jądro wykonuje operację
+-> wynik wraca do procesu
+-> CPU wraca do trybu użytkownika
+```
+
+Przykład:
+
+```c
+read(fd, buf, 100);
+```
+
+Program użytkownika nie czyta dysku sam. Przez syscall prosi jądro, a jądro sprawdza uprawnienia, deskryptor, bufor i zleca właściwą operację.
+
+Wywołanie systemowe nie jest zwykłym wywołaniem funkcji, bo zmienia poziom ochrony i wchodzi do kodu jądra.
+
+### `fork`, `exec`, `wait`, `exit`
+
+| Funkcja | Co robi |
+|---|---|
+| `fork` | tworzy nowy proces potomny jako kopię bieżącego |
+| `exec` | zastępuje program w bieżącym procesie nowym programem |
+| `wait` | rodzic czeka na zakończenie procesu potomnego |
+| `exit` | kończy bieżący proces |
+
+Najważniejsza para:
+
+- `fork` tworzy nowy proces,
+- `exec` **nie tworzy nowego procesu**, tylko podmienia obraz programu w obecnym procesie.
+
+Typowy schemat shella:
+
+```text
+shell
+-> fork: powstaje proces potomny
+-> dziecko robi exec("program")
+-> rodzic może zrobić wait
+```
+
+Po `exec` PID procesu zwykle zostaje ten sam, ale zmienia się kod programu i przestrzeń adresowa.
+
+Pułapki:
+
+- `fork` tworzy nowy proces: **T**,
+- `exec` tworzy nowy proces: **N**,
+- `exec` zastępuje obraz programu bieżącego procesu: **T**,
+- `wait` czeka na zakończenie dziecka: **T**.
+
 ## Przerwania
 
 Przerwanie powoduje chwilowe przerwanie normalnego wykonania programu i przejście do procedury obsługi.
@@ -210,6 +395,36 @@ Rodzaje:
 - programowe, np. mechanizm syscall.
 
 Przerwania sprzętowe są asynchroniczne względem programu, bo mogą pojawić się w dowolnym momencie.
+
+Podział egzaminacyjny:
+
+| Typ zdarzenia | Przykład | Charakter |
+|---|---|---|
+| przerwanie sprzętowe | klawiatura, dysk, timer | asynchroniczne |
+| pułapka/wyjątek | syscall, dzielenie przez zero, page fault | synchroniczne |
+
+**Asynchroniczne** oznacza, że zdarzenie nie wynika bezpośrednio z aktualnie wykonywanej instrukcji. Przykład: dysk kończy operację i zgłasza przerwanie.
+
+**Synchroniczne** oznacza, że zdarzenie wynika z aktualnie wykonywanej instrukcji. Przykład: program wykonuje syscall albo próbuje dzielić przez zero.
+
+Typowy przebieg obsługi przerwania:
+
+1. procesor wykrywa przerwanie,
+2. zwykle kończy cykl aktualnie wykonywanego rozkazu,
+3. sprzęt zapisuje adres powrotu na stosie, czasem też część rejestrów/flag,
+4. procesor przechodzi do procedury obsługi przerwania,
+5. obsługa może wykonać kod jądra, zmienić stan procesu albo obudzić proces,
+6. po obsłudze adres powrotu jest odtwarzany i trafia do licznika rozkazów.
+
+Szczegóły zależą od sprzętu. Obsługa może używać osobnego stosu, zmieniać poziom ochrony albo doprowadzić do przełączenia kontekstu.
+
+Pułapki:
+
+- przerwanie sprzętowe jest asynchroniczne: **T**,
+- wyjątek/programowa pułapka jest synchroniczna względem instrukcji: **T**,
+- przerwanie zawsze musi przełączyć na inny proces: **N**,
+- procesor zwykle nie urywa instrukcji w połowie: **T**,
+- obsługa przerwania może zmienić poziom ochrony: **T**.
 
 ## Wejście-wyjście a procesy
 
@@ -230,6 +445,10 @@ Po zakończeniu I/O przerwanie informuje system, że proces może wrócić do ko
 - Funkcja systemowa wykonuje się w trybie uprzywilejowanym.
 - Procedura obsługi sygnału użytkownika wykonuje się w trybie użytkownika, nie jądra.
 - Przerwanie zegarowe umożliwia wywłaszczanie.
+- Zmiana trybu user/kernel to nie to samo co przełączenie kontekstu.
+- W kolejkach procesów są PCB albo wskaźniki do PCB, nie pełna pamięć procesu.
+- `fork` tworzy proces, a `exec` podmienia program w obecnym procesie.
+- Przerwania sprzętowe są asynchroniczne, a wyjątki/programowe pułapki synchroniczne.
 
 ## Pytania T/N z odpowiedziami
 
@@ -262,3 +481,33 @@ Po zakończeniu I/O przerwanie informuje system, że proces może wrócić do ko
 
 10. Przełączenie kontekstu zawsze polega tylko na zmianie trybu użytkownika na tryb jądra.  
     **N** - chodzi o zmianę kontekstu wykonania między procesami lub wątkami.
+
+11. System operacyjny umieszcza PCB procesów w kolejce gotowych.  
+    **T** - kolejka gotowych zawiera procesy gotowe do dostania CPU.
+
+12. Proces wstrzymany na dysku znajduje się w kolejce gotowych.  
+    **N** - znajduje się w kolejce czekających na dysk lub dane zdarzenie.
+
+13. Przerwanie sprzętowe jest zdarzeniem asynchronicznym.  
+    **T** - może pojawić się niezależnie od aktualnie wykonywanej instrukcji.
+
+14. Wyjątek spowodowany dzieleniem przez zero jest synchroniczny względem instrukcji.  
+    **T** - wynika z aktualnie wykonywanego rozkazu.
+
+15. Funkcja systemowa wykonuje się w trybie użytkownika, bo wywołuje ją proces użytkownika.  
+    **N** - kod jądra obsługujący syscall wykonuje się w trybie uprzywilejowanym.
+
+16. `fork` tworzy nowy proces.  
+    **T** - proces potomny jest kopią procesu rodzica.
+
+17. `exec` tworzy nowy proces potomny.  
+    **N** - `exec` podmienia obraz programu w bieżącym procesie.
+
+18. `wait` może służyć rodzicowi do czekania na zakończenie dziecka.  
+    **T** - to typowe użycie `wait`.
+
+19. Program użytkownika może dowolnie wykonać wszystkie rozkazy uprzywilejowane.  
+    **N** - rozkazy uprzywilejowane są zarezerwowane dla trybu jądra.
+
+20. W x86 ring 0 jest bardziej uprzywilejowany niż ring 3.  
+    **T** - ring 0 to typowo jądro, ring 3 to programy użytkownika.

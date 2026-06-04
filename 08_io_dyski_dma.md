@@ -14,6 +14,39 @@ Najważniejsze hasła:
 - sterowniki urządzeń,
 - planowanie dostępu do dysku.
 
+## Skala czasów
+
+Operacje wejścia-wyjścia są zwykle o rzędy wielkości wolniejsze niż dostęp do pamięci i tym bardziej wolniejsze niż operacje na rejestrach/cache.
+
+Orientacyjna intuicja:
+
+| Mechanizm | Typowa skala |
+|---|---|
+| etap potoku CPU | nanosekundy |
+| dostęp do RAM | nanosekundy / dziesiątki ns |
+| przełączenie kontekstu | mikrosekundy lub więcej |
+| kwant czasu RR | milisekundy |
+| I/O dyskowe/sieciowe | mikrosekundy, milisekundy albo więcej |
+
+Dlatego proces czekający na I/O zwykle nie powinien aktywnie zajmować CPU. System wstrzymuje go i uruchamia inny proces.
+
+Typowy przebieg:
+
+```text
+proces aktywny
+-> zleca I/O
+-> przechodzi w stan wstrzymany
+-> CPU wykonuje inny proces
+-> urządzenie kończy I/O i zgłasza przerwanie
+-> proces wraca do kolejki gotowych
+```
+
+Egzaminowo:
+
+> Operacje wejścia-wyjścia są o rzędy wielkości wolniejsze niż dostęp do pamięci.
+
+Odpowiedź: **T**.
+
 ## Urządzenia blokowe i znakowe
 
 | Typ | Sens | Przykład |
@@ -149,6 +182,7 @@ SSTF może powodować zagłodzenie odległych żądań.
 - Urządzenie blokowe nie jest tym samym co znakowe.
 - Memory-mapped I/O używa adresów, ale nie jest zwykłym RAM.
 - SSTF może głodzić dalekie żądania.
+- Proces czekający na I/O zwykle powinien być wstrzymany, a CPU może wykonywać inny proces.
 
 ## Pytania T/N z odpowiedziami
 
@@ -182,3 +216,8 @@ SSTF może powodować zagłodzenie odległych żądań.
 10. Memory-mapped I/O oznacza, że rejestry urządzeń są widoczne pod adresami.  
     **T** - dostęp wygląda jak odczyt/zapis pod adres.
 
+11. Operacje wejścia-wyjścia są zwykle dużo wolniejsze niż dostęp do RAM.  
+    **T** - to jeden z powodów stosowania przerwań i wieloprogramowości.
+
+12. Proces czekający na I/O zwykle powinien aktywnie zajmować CPU aż do końca operacji.  
+    **N** - zwykle jest wstrzymywany, a CPU wykonuje coś innego.
