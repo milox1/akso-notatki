@@ -74,6 +74,10 @@ Ten plik jest do dopisywania rzeczy, na których łatwo stracić punkt. Każda p
 **Odpowiedź:** N.  
 **Dlaczego:** w kolejkach są PCB albo wskaźniki do PCB, nie kopie całej przestrzeni adresowej.
 
+**Pułapka:** Proces jest przechowywany w PCB.  
+**Odpowiedź:** N.  
+**Dlaczego:** PCB jest metryczką/opisem procesu; proces obejmuje też pamięć, zasoby, rejestry i wykonywany program.
+
 **Pułapka:** `exec` tworzy nowy proces potomny.  
 **Odpowiedź:** N.  
 **Dlaczego:** `exec` podmienia program w bieżącym procesie; nowy proces tworzy `fork`.
@@ -95,6 +99,14 @@ Ten plik jest do dopisywania rzeczy, na których łatwo stracić punkt. Każda p
 **Pułapka:** Bardzo duży kwant w RR upodabnia algorytm do FCFS.  
 **Odpowiedź:** T.  
 **Dlaczego:** proces rzadko zostaje przerwany z powodu końca kwantu.
+
+**Pułapka:** Bardzo mały kwant w RR zawsze poprawia wydajność.  
+**Odpowiedź:** N.  
+**Dlaczego:** zbyt mały kwant zwiększa narzut przełączania kontekstu.
+
+**Pułapka:** SRTF nie może przerwać aktualnie wykonywanego procesu.  
+**Odpowiedź:** N.  
+**Dlaczego:** SRTF jest wywłaszczającą wersją SJF i może przerwać proces, gdy przyjdzie krótszy.
 
 ## Synchronizacja i zakleszczenia
 

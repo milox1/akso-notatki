@@ -76,6 +76,33 @@ Cechy:
 
 Jeśli przyjdzie nowy proces z krótszym pozostałym czasem niż aktualnie wykonywany, system może wywłaszczyć obecny proces.
 
+SRTF zawsze wybiera proces, któremu zostało najmniej czasu do końca aktualnej fazy CPU.
+
+Przykład:
+
+```text
+P1 przychodzi w t=0, potrzebuje 8
+P2 przychodzi w t=2, potrzebuje 3
+```
+
+Od `t=0` do `t=2` działa `P1`, więc zostaje mu `6`.
+
+W `t=2` przychodzi `P2`:
+
+```text
+P1 zostało 6
+P2 potrzebuje 3
+```
+
+SRTF wybiera `P2`, bo ma krótszy pozostały czas. `P1` zostaje wywłaszczony.
+
+Diagram:
+
+```text
+0   2   5       11
+| P1 | P2 |  P1  |
+```
+
 Cechy:
 
 - wywłaszczające,
@@ -100,6 +127,40 @@ Rozwiązanie: **postarzanie**, czyli stopniowe zwiększanie priorytetu długo cz
 
 **RR**: każdy proces dostaje kwant czasu, potem wraca na koniec kolejki, jeśli się nie zakończył.
 
+Algorytm:
+
+1. Procesy stoją w kolejce gotowych.
+2. Pierwszy proces dostaje CPU na maksymalnie jeden kwant.
+3. Jeśli skończy wcześniej, znika z kolejki.
+4. Jeśli nie skończy, po końcu kwantu trafia na koniec kolejki.
+5. Następny proces z kolejki dostaje CPU.
+
+Przykład dla kwantu `3`:
+
+```text
+P1: 8
+P2: 4
+P3: 2
+```
+
+Wykonanie:
+
+```text
+P1 robi 3, zostaje 5 -> na koniec
+P2 robi 3, zostaje 1 -> na koniec
+P3 robi 2, kończy
+P1 robi 3, zostaje 2 -> na koniec
+P2 robi 1, kończy
+P1 robi 2, kończy
+```
+
+Diagram:
+
+```text
+0   3   6   8   11  12  14
+|P1|P2|P3| P1 |P2| P1 |
+```
+
 Cechy:
 
 - wywłaszczające,
@@ -112,6 +173,43 @@ Kwant:
 - za mały -> dużo przełączeń kontekstu,
 - za duży -> RR zbliża się do FCFS,
 - bardzo mały teoretycznie zbliża się do processor sharing, ale praktycznie koszt przełączeń byłby za duży.
+
+### Narzut przełączania kontekstu
+
+**Narzut przełączania kontekstu** to czas tracony na samo przełączenie CPU z jednego procesu na drugi.
+
+W tym czasie system robi techniczne rzeczy:
+
+- zapisuje rejestry starego procesu,
+- zapisuje licznik rozkazów,
+- aktualizuje PCB,
+- wybiera następny proces,
+- odtwarza rejestry nowego procesu,
+- przełącza informacje o pamięci, jeśli trzeba.
+
+To nie jest użyteczna praca programu użytkownika.
+
+Przykład:
+
+```text
+kwant = 100 ms
+context switch = 1 ms
+```
+
+Narzut jest mały.
+
+```text
+kwant = 2 ms
+context switch = 1 ms
+```
+
+Narzut jest bardzo duży, bo system często przełącza procesy i traci dużo czasu na administrację.
+
+Egzaminowo:
+
+> Zbyt mały kwant w RR zwiększa narzut przełączania kontekstu.
+
+Odpowiedź: **T**.
 
 ## Szeregowanie wielopoziomowe
 
@@ -154,6 +252,7 @@ Pojęcia:
 - RR wymaga kwantu i czasomierza.
 - Duży kwant RR upodabnia RR do FCFS.
 - Mały kwant zwiększa narzut przełączania kontekstu.
+- Proces po wykorzystaniu całego kwantu w RR wraca na koniec kolejki, jeśli się nie zakończył.
 - SJF minimalizuje średni czas oczekiwania, jeśli znamy czasy faz.
 - Priorytety mogą prowadzić do zagłodzenia.
 - Postarzanie przeciwdziała zagłodzeniu.
@@ -176,6 +275,15 @@ Pojęcia:
 5. RR nie wymaga wsparcia sprzętowego czasomierza.  
    **N** - czasomierz jest potrzebny do końca kwantu.
 
+5a. Proces w RR, który wykorzystał cały kwant i nie skończył działania, wraca na koniec kolejki.  
+   **T** - to podstawowa zasada szeregowania rotacyjnego.
+
+5b. Zbyt mały kwant w RR może powodować duży narzut przełączania kontekstu.  
+   **T** - CPU traci dużo czasu na przełączanie procesów.
+
+5c. SRTF może wywłaszczyć proces, gdy pojawi się nowy proces z krótszym pozostałym czasem.  
+   **T** - dlatego SRTF jest wywłaszczającą wersją SJF.
+
 6. Postarzanie może przeciwdziałać zagłodzeniu.  
    **T** - długo czekający proces zyskuje priorytet.
 
@@ -190,4 +298,3 @@ Pojęcia:
 
 10. Hard real-time oznacza, że przekroczenie terminu jest akceptowalne, jeśli średnio system działa szybko.  
     **N** - w hard real-time termin musi być dotrzymany.
-

@@ -114,6 +114,8 @@ Druga pułapka:
 
 PCB zawiera informacje potrzebne do zarządzania procesem i wznowienia jego wykonania.
 
+PCB jest **metryczką/opisem procesu**, a nie samym procesem.
+
 Typowo zawiera:
 
 - PID,
@@ -127,6 +129,15 @@ Typowo zawiera:
 Pułapka:
 
 > PCB nie przechowuje całej zawartości stron pamięci procesu. Przechowuje metadane i wskaźniki/struktury potrzebne do zarządzania.
+
+Inaczej:
+
+```text
+proces = wykonywany program + pamięć + rejestry + zasoby + stan
+PCB    = informacje o procesie potrzebne systemowi
+```
+
+W kolejkach system przechowuje PCB albo wskaźniki do PCB. To nie znaczy, że proces "siedzi w PCB"; w PCB siedzi opis procesu.
 
 ## Kolejki procesów
 
